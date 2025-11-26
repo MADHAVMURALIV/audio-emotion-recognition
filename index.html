@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>Audio Emotion Detector — Demo</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+<style>
+:root{
+  --bg:#0f1115; --panel:#14161c; --accent:#00ffab; --danger:#ff4b4b; --muted:#9b9b9b;
+  --card-radius:12px;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;font-family:"Inter",system-ui,Arial;color:#fff;background:var(--bg);
+}
+.sidebar{
+  position:fixed;left:0;top:0;bottom:0;width:250px;background:#111318;padding:28px;
+}
+.sidebar .title{color:var(--accent);font-weight:700;font-size:20px;margin-bottom:28px}
+.menu-item{color:#cfcfcf;opacity:.85;margin:18px 0;cursor:pointer}
+.menu-item:hover{color:var(--accent);opacity:1}
+.main{margin-left:270px;padding:24px}
+.upload-section{
+  background:var(--panel);
+  padding:18px;border-radius:var(--card-radius);
+  display:flex;justify-content:space-between;align-items:center;
+  margin-bottom:18px
+}
+.upload-left{font-weight:600;font-size:16px}
+
+/* Recording indicator animation */
+#recIndicator {
+  display:none;
+  margin-left:20px;
+  font-size:14px;
+  font-weight:700;
+  color:#ff0000;
+  animation: pulse 1.1s infinite ease-in-out;
+}
+@keyframes pulse {
+  0%   { opacity:0.2; transform:scale(0.85);}
+  50%  { opacity:1;   transform:scale(1);}
+  100% { opacity:0.2; transform:scale(0.85);}
+}
+
+.controls{display:flex;gap:10px}
+.btn{padding:10px 14px;border-radius:10px;border:none;cursor:pointer;font-weight:700}
+.btn.upload{background:var(--accent);color:#000}
+.btn.record{background:var(--danger);color:#fff}
+.top-grid{
+  display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-bottom:22px;
+}
+.stat-card{background:var(--panel);padding:18px;border-radius:var(--card-radius);min-height:88px}
+.stat-card small{display:block;color:var(--muted);margin-bottom:8px}
+.stat-value{font-size:22px;color:var(--accent);font-weight:700}
+.content-grid{display:grid;grid-template-columns:2fr 1fr;gap:18px;align-items:start;}
+.left-col{display:flex;flex-direction:column;gap:18px}
+.panel{background:var(--panel);border-radius:var(--card-radius);padding:16px}
+.visual-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.visual{
+  background:#0f1216;border-radius:10px;padding:10px;
+  min-height:220px;display:flex;align-items:center;justify-content:center
+}
+.confidence{display:flex;flex-direction:column;align-items:center;justify-content:center;height:200px}
+.confidence .label{font-size:32px;color:var(--accent);font-weight:800;margin-bottom:6px}
+.confidence .sub{color:var(--muted)}
+.history{display:flex;flex-direction:column;gap:12px}
+.history .list{background:var(--panel);padding:12px;border-radius:10px;min-height:519px;overflow:auto}
+
+.loading-overlay{
+  position:fixed;inset:0;display:none;align-items:center;justify-content:center;
+  background:rgba(0,0,0,0.6);z-index:9999;
+}
+.circular-loader {
+  position: relative;
+  width: 140px;
+  height: 140px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.circular-loader .circle {
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  border: 6px solid transparent;
+  border-top: 6px solid #00ffab;
+  animation: spin 2.5s linear infinite;
+  box-shadow: 0 0 14px #00ffab;
+}
+
+.percent-text {
+  position: absolute;
+  font-size: 18px;
+  font-weight: 700;
+  color: #00ffab;
+  text-shadow: 0px 0px 8px #00ffab;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+
+<div class="sidebar">
+  <div class="title">Audio Expression Enhancer</div>
+  <div class="menu-item">Overview</div>
+  <div class="menu-item">Alerts</div>
+  <div class="menu-item">Recordings</div>
+  <div class="menu-item">Dataset</div>
+  <div class="menu-item">Settings</div>
+</div>
+
+<div class="main">
+
+  <div class="upload-section">
+    <div style="display:flex;align-items:center;gap:10px">
+      <div class="upload-left">Upload / Record Audio</div>
+
+      <!-- 🔵 Animated Recording Indicator -->
+      <span id="recIndicator">● Recording...</span>
+    </div>
+
+    <div class="controls">
+      <input id="audioInput" accept="audio/*" type="file" style="display:none"/>
+      <button class="btn upload" id="uploadBtn">Upload Audio</button>
+      <button class="btn record" id="recordBtn">
+        <span id="recLabel">Record Live</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="top-grid">
+    <div class="stat-card"><small>Model Accuracy</small><div class="stat-value" id="accuracy">N/A</div></div>
+    <div class="stat-card"><small>Prediction</small><div class="stat-value" id="prediction">N/A</div></div>
+    <div class="stat-card"><small>Last Prediction Time</small><div class="stat-value" id="lastTime">N/A</div></div>
+    <div class="stat-card"><small>Avg Processing Time</small><div class="stat-value" id="avgProc">N/A</div></div>
+  </div>
+
+  <div class="content-grid">
+
+    <div class="left-col">
+      <div class="panel">
+        <div style="font-weight:700;margin-bottom:10px">Audio Waveform & Spectrogram</div>
+        <div class="visual-grid">
+          <div class="visual"><canvas id="waveCanvas" style="width:100%;height:220px"></canvas></div>
+          <div class="visual"><canvas id="specCanvas" style="width:100%;height:220px"></canvas></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div style="font-weight:700;margin-bottom:8px">Prediction Confidence</div>
+        <div class="confidence">
+          <div class="label" id="confLabel">N/A</div>
+          <div class="sub" id="confPercent">N/A</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="history">
+      <div class="panel">
+        <div style="font-weight:700;margin-bottom:10px">History</div>
+        <div style="display:flex;gap:12px">
+          <div style="flex:1"><div class="list" id="historyList"></div></div>
+          <div style="width:400px">
+            <div style="background:var(--panel);padding:8px;border-radius:10px">
+              <canvas id="historyChart" width="200" height="500"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="loading-overlay" id="loading">
+  <div class="circular-loader">
+    <div class="circle"></div>
+    <span class="percent-text">Processing...</span>
+  </div>
+</div>
+
+
+<script>
+const API_URL="http://127.0.0.1:8000/predict";
+const HISTORY_MAX=12;
+let history=[];
+
+/* UI Elements */
+const uploadBtn=document.getElementById("uploadBtn");
+const audioInput=document.getElementById("audioInput");
+const recordBtn=document.getElementById("recordBtn");
+const recIndicator=document.getElementById("recIndicator");
+const recLabel=document.getElementById("recLabel");
+const loading=document.getElementById("loading");
+const historyList=document.getElementById("historyList");
+
+const waveCanvas=document.getElementById("waveCanvas");
+const specCanvas=document.getElementById("specCanvas");
+const historyChartCtx=document.getElementById("historyChart").getContext("2d");
+
+const historyChart=new Chart(historyChartCtx,{
+  type:"line",
+  data:{labels:[],datasets:[{label:"Processing Time",data:[],borderColor:"#00ffab",tension:0.2}]},
+  options:{responsive:true,maintainAspectRatio:false}
+});
+
+/* Recording System */
+let mediaRecorder=null, recChunks=[], micStream=null, isRecording=false;
+
+recordBtn.onclick = async ()=>{
+
+  if(!isRecording){
+    try{
+      micStream=await navigator.mediaDevices.getUserMedia({audio:true});
+      mediaRecorder=new MediaRecorder(micStream,{mimeType:"audio/webm"});
+      recChunks=[];
+
+      recIndicator.style.display="inline";  
+
+      mediaRecorder.ondataavailable=e=>{ if(e.data.size>0) recChunks.push(e.data); };
+
+      mediaRecorder.onstop=async()=>{
+        recIndicator.style.display="none";  
+
+        const wavBlob=await convertWebmToWav(new Blob(recChunks,{type:"audio/webm"}));
+        const file=new File([wavBlob],"recording.wav",{type:"audio/wav"});
+
+        micStream.getTracks().forEach(t=>t.stop());
+        micStream=null;
+
+        await sendFile(file);
+      };
+
+      mediaRecorder.start();
+      isRecording=true;
+      recLabel.textContent="Recording...";
+
+    }catch(err){
+      alert("Microphone not accessible");
+    }
+
+  } else {
+    mediaRecorder.stop();
+    isRecording=false;
+    recLabel.textContent="Record Live";
+    recIndicator.style.display="none"; 
+  }
+};
+
+uploadBtn.onclick=()=>audioInput.click();
+audioInput.onchange=e=>sendFile(e.target.files[0]);
+
+/* Convert WEBM → WAV */
+async function convertWebmToWav(webmBlob){
+  return new Promise(resolve=>{
+    const reader=new FileReader();
+    reader.onload=async()=>{
+      const audioCtx=new AudioContext();
+      const audioBuffer=await audioCtx.decodeAudioData(reader.result);
+      resolve(new Blob([audioBufferToWav(audioBuffer)],{type:"audio/wav"}));
+    };
+    reader.readAsArrayBuffer(webmBlob);
+  });
+}
+
+/* WAV encoder */
+function audioBufferToWav(buffer){
+  let num=buffer.numberOfChannels, length=buffer.length*num*2+44;
+  let out=new ArrayBuffer(length), view=new DataView(out);
+  write(view,0,"RIFF"); view.setUint32(4,length-8,true);
+  write(view,8,"WAVE"); write(view,12,"fmt ");
+  view.setUint32(16,16,true); view.setUint16(20,1,true);
+  view.setUint16(22,num,true); view.setUint32(24,buffer.sampleRate,true);
+  view.setUint32(28,buffer.sampleRate*num*2,true);
+  view.setUint16(32,num*2,true); view.setUint16(34,16,true);
+  write(view,36,"data"); view.setUint32(40,length-44,true);
+
+  let offset=44, channels=[];
+  for(let i=0;i<num;i++) channels.push(buffer.getChannelData(i));
+
+  let inter=interleave(channels);
+  for(let i=0;i<inter.length;i++,offset+=2)
+    view.setInt16(offset,inter[i]*0x7FFF,true);
+
+  return out;
+}
+function write(view,off,str){ for(let i=0;i<str.length;i++)view.setUint8(off+i,str.charCodeAt(i)); }
+function interleave(ch){ let len=ch[0].length,res=new Float32Array(len*ch.length),i=0;
+  for(let s=0;s<len;s++) for(let c=0;c<ch.length;c++) res[i++]=ch[c][s];
+  return res;
+}
+
+/* SEND FILE TO BACKEND */
+async function sendFile(file){
+  try{
+    loading.style.display="flex";
+    const fd=new FormData(); fd.append("file",file);
+
+    const res=await fetch(API_URL,{method:"POST",body:fd});
+    const data=await res.json();
+
+    document.getElementById("prediction").innerText=data.label.toUpperCase();
+    document.getElementById("accuracy").innerText=(data.confidence*100).toFixed(2)+"%";
+    document.getElementById("lastTime").innerText=new Date().toLocaleTimeString();
+    document.getElementById("avgProc").innerText=data.processing_time+"s";
+    document.getElementById("confLabel").innerText=data.label.toUpperCase();
+    document.getElementById("confPercent").innerText=(data.confidence*100).toFixed(2)+"%";
+
+    if(data.waveform_png_b64){
+      let img=new Image();
+      img.onload=()=>{
+        let ctx=waveCanvas.getContext("2d");
+        waveCanvas.width=waveCanvas.clientWidth;
+        waveCanvas.height=waveCanvas.clientHeight;
+        ctx.drawImage(img,0,0,waveCanvas.width,waveCanvas.height);
+      };
+      img.src="data:image/png;base64,"+data.waveform_png_b64;
+    }
+
+    if(data.spectrogram_png_b64){
+      let img2=new Image();
+      img2.onload=()=>{
+        let ctx2=specCanvas.getContext("2d");
+        specCanvas.width=specCanvas.clientWidth;
+        specCanvas.height=specCanvas.clientHeight;
+        ctx2.drawImage(img2,0,0,specCanvas.width,specCanvas.height);
+      };
+      img2.src="data:image/png;base64,"+data.spectrogram_png_b64;
+    }
+
+    const entry={label:data.label,time:new Date().toLocaleString(),proc:data.processing_time};
+    history.unshift(entry); if(history.length>HISTORY_MAX)history.pop();
+
+    renderHistory();
+
+  }catch(err){ console.log(err); }
+
+  loading.style.display="none";
+}
+
+function renderHistory(){
+  historyList.innerHTML="";
+  history.forEach(h=>{
+    const div=document.createElement("div");
+    div.style.padding="8px 6px";
+    div.innerHTML=`<b>${h.label}</b><br><span style="color:#999">${h.time} • ${h.proc}s</span>`;
+    historyList.appendChild(div);
+  });
+
+  historyChart.data.labels=history.map(h=>h.time);
+  historyChart.data.datasets[0].data=history.map(h=>h.proc);
+  historyChart.update();
+}
+</script>
+
+</body>
+</html>
