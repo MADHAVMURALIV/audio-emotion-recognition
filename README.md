@@ -42,7 +42,7 @@ Open cover.html or index.html in any browser
 
 # UI and Outputs
 
-```
+
 <img width="1900" height="908" alt="spectral overview1" src="https://github.com/user-attachments/assets/95a7a596-6c44-4319-9ce5-d8a5b9f132d5" />
 <img width="1900" height="902" alt="Screenshot 2025-12-22 132627" src="https://github.com/user-attachments/assets/631ba796-e4fa-4d94-893b-0b7611fab698" />
 <img width="1919" height="912" alt="Screenshot 2025-12-22 132615" src="https://github.com/user-attachments/assets/88525a9b-5dfc-4962-915f-e733bb5140bd" />
@@ -52,4 +52,3 @@ Open cover.html or index.html in any browser
 <img width="1903" height="937" alt="coverpage" src="https://github.com/user-attachments/assets/cf08f97d-a4de-4bd9-b087-333d316e6acc" />
 <img width="1919" height="978" alt="Screenshot 2025-12-22 132319" src="https://github.com/user-attachments/assets/0ed61c33-a378-46c4-a4da-61db3e10414e" />
 
-```
