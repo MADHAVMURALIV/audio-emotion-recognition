@@ -37,7 +37,7 @@ python main.py
 
 ## Run Frontend 
 ```
-Open cover.html or index.html in any browser
+Open cover.html or index.html in any browser (chrome , brave , operagx , edge .etc )
 ```
 
 # UI and Outputs
