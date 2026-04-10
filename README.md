@@ -27,7 +27,7 @@ This project allows users to upload or record audio and predicts the underlying 
 
 ## Setup Instructions
 ```
-pip install -r requirements.txt
+pip install -r requirements.txt 
 ```
 
 ## Run Backend
