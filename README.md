@@ -4,11 +4,11 @@ A web-based application that detects human emotions from audio input using machi
 This project allows users to upload or record audio and predicts the underlying emotion. It also visualizes the audio waveform and mel-spectrogram for better interpretation.
 
 ## Features
-- Upload audio files or record live audio
-- Emotion classification from speech
-- Waveform visualization
-- Mel-spectrogram visualization
-- Confidence score and processing time display
+- Upload audio files or record live audio.
+- Emotion classification from speech.
+- Waveform visualization.
+- Mel-spectrogram visualization.
+- Confidence score and processing time display.
 
 ## Tech Stack
 - Python
